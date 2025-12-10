@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Precin</title>
+    <style>
+        /* --- CSS GERAL --- */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+        body { background-color: #f0f2f5; color: #1c1e21; min-height: 100vh;}
+        header { background: linear-gradient(135deg, #111, #333); width: 100%; padding: 2rem 1rem; text-align: center; color: white;}
+        
+        /* LAYOUT PRINCIPAL */
+        .main-wrapper {
+            display: flex;
+            max-width: 1400px;
+            margin: 20px auto;
+            padding: 0 10px;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        /* --- BARRA LATERAL DE FILTROS --- */
+        .sidebar {
+            width: 280px;
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            display: none; 
+            flex-shrink: 0;
+        }
+        .sidebar h3 { font-size: 1.1rem; margin-bottom: 10px; color: #333; border-bottom: 2px solid #f0f2f5; padding-bottom: 5px; }
+        .filter-group { margin-bottom: 25px; }
+        
+        /* Checkboxes customizados */
+        .checkbox-label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; cursor: pointer; font-size: 0.95rem; color: #555; }
+        .checkbox-label:hover { color: #f60; }
+        .checkbox-label input { accent-color: #f60; transform: scale(1.2); }
+
+        /* Inputs de Preço */
+        .price-inputs { display: flex; gap: 10px; align-items: center; }
+        .price-inputs input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 6px; }
+
+        /* --- ÁREA CENTRAL --- */
+        .content-area { flex: 1; display: flex; flex-direction: column; align-items: center; width: 100%; }
+
+        /* BUSCA */
+        .search-container { max-width: 800px; width: 100%; display: flex; gap: 10px; box-shadow: 0 10px 15px rgba(0,0,0,0.1); border-radius: 50px; background: white; padding: 10px; margin-bottom: 20px; }
+        input#searchInput { flex: 1; padding: 10px 20px; border: none; font-size: 1.1rem; outline: none; }
+        button.search-btn { background-color: #f60; color: white; border: none; padding: 10px 30px; border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.2s; white-space: nowrap;}
+        button.search-btn:hover { background-color: #e50; }
+
+        /* FILTROS DE LOJA (TOPO) */
+        .controls-area { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 15px; 
+            justify-content: center; 
+            align-items: center; 
+            width: 100%; 
+            margin-bottom: 20px; 
+        }
+
+        /* Botões lado a lado */
+        .filters { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 10px; 
+            justify-content: center; 
+        }
+
+        .filter-btn { padding: 8px 16px; border: 2px solid #ddd; border-radius: 20px; background: white; color: #666; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .filter-btn img { height: 20px; width: 20px; border-radius: 50%; }
+        .filter-btn.active { border-color: #2563eb; background-color: #eff6ff; color: #2563eb; }
+        .filter-btn.active img { filter: none; }
+
+        .sort-box select { padding: 8px 16px; border-radius: 20px; border: 2px solid #ddd; font-weight: 600; outline: none; height: 42px;}
+
+        /* GRID E CARD */
+        #results { width: 100%; display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; padding-bottom: 40px; }
+        .card { background: white; border-radius: 15px; padding: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative; border-top: 4px solid #ccc; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+
+        .store-badge { position: absolute; top: 10px; right: 10px; background: white; padding: 5px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); height: 40px; border: 1px solid #eee; display: flex; justify-content: center; align-items: center; z-index: 2;}
+        .store-logo-img { max-height: 100%; max-width: 80px; object-fit: contain; }
+        
+        .img-container { width: 100%; height: 180px; display: flex; align-items: center; justify-content: center; margin-bottom: 10px; }
+        .product-img { max-height: 100%; max-width: 100%; object-fit: contain; }
+        
+        .product-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 10px; color: #333; display: -webkit-box; -webkit-line-clamp: 3; line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; height: 3.8em;}
+        
+        .price-area { margin-bottom: 10px; }
+        .old-price { font-size: 0.8rem; color: #999; text-decoration: line-through; display: block;}
+        .price-tag { font-size: 1.4rem; font-weight: 800; color: #1f2937; display: flex; align-items: center; flex-wrap: wrap; gap: 5px;}
+        
+        .promo-badge { position: absolute; top: 10px; left: 10px; background: #ef4444; color: white; font-size: 0.8rem; font-weight: bold; padding: 4px 8px; border-radius: 4px; z-index: 2; box-shadow: 0 2px 4px rgba(239,68,68,0.3); }
+
+        .btn-buy { display: block; text-align: center; padding: 10px; border-radius: 8px; text-decoration: none; font-weight: bold; color: white; margin-top: auto; }
+        .btn-buy:hover { opacity: 0.9; }
+        .loading { text-align: center; display: none; margin-top: 20px; font-size: 1.2rem; width: 100%; }
+
+        /* Cores Lojas */
+        .card.amazon { border-top-color: #fa8900; } .card.amazon .btn-buy { background: #fa8900; color: black;}
+        .card.mercadolivre { border-top-color: #ffe600; } .card.mercadolivre .btn-buy { background: #2d3277; }
+        .card.kabum { border-top-color: #f60; } .card.kabum .btn-buy { background: #f60; }
+        .card.magalu { border-top-color: #0086ff; } .card.magalu .btn-buy { background: #0086ff; }
+        .card.pichau { border-top-color: #cf0e0e; } .card.pichau .btn-buy { background: #cf0e0e; }
+        .card.terabyte { border-top-color: #26a300; } .card.terabyte .btn-buy { background: #26a300; }
+
+        @media (max-width: 800px) {
+            .main-wrapper { flex-direction: column; }
+            .sidebar { width: 100%; display: none; }
+            .sidebar.active { display: block; }
+            .controls-area { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🛍️ Precin</h1>
+        <p>Busque e Compare nas Melhores Lojas</p>
+    </header>
+
+    <div class="main-wrapper">
+        
+        <aside class="sidebar" id="sidebarFiltros">
+            <div class="filter-group">
+                <h3>💰 Faixa de Preço</h3>
+                <div class="price-inputs">
+                    <input type="number" id="minPrice" placeholder="Mín" oninput="filtrarLocalmente()">
+                    <input type="number" id="maxPrice" placeholder="Máx" oninput="filtrarLocalmente()">
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <h3>💾 Armazenamento</h3>
+                <div id="filter-storage-list">
+                    <p style="color:#999; font-size:0.9rem;">Faça uma busca para ver opções.</p>
+                </div>
+            </div>
+
+            <div class="filter-group">
+                <h3>🏷️ Marcas Detectadas</h3>
+                <div id="filter-brand-list">
+                    <p style="color:#999; font-size:0.9rem;">Faça uma busca para ver opções.</p>
+                </div>
+            </div>
+        </aside>
+
+        <main class="content-area">
+            
+            <div class="search-container">
+                <input type="text" id="searchInput" placeholder="O que você quer comprar? (Ex: RTX 4060, SSD 1TB)">
+                <button class="search-btn" onclick="buscarNoPython()">Buscar</button>
+            </div>
+
+            <div class="controls-area">
+                <div class="filters">
+                    <button class="filter-btn active" onclick="toggleLoja(this, 'amazon')">
+                        <img src="https://www.google.com/s2/favicons?domain=amazon.com.br&sz=128"> Amazon
+                    </button>
+                    <button class="filter-btn active" onclick="toggleLoja(this, 'ml')">
+                        <img src="https://www.google.com/s2/favicons?domain=mercadolivre.com.br&sz=128"> ML
+                    </button>
+                    <button class="filter-btn active" onclick="toggleLoja(this, 'kabum')">
+                        <img src="https://www.google.com/s2/favicons?domain=kabum.com.br&sz=128"> Kabum
+                    </button>
+                    <button class="filter-btn active" onclick="toggleLoja(this, 'magalu')">
+                        <img src="https://www.google.com/s2/favicons?domain=magazineluiza.com.br&sz=128"> Magalu
+                    </button>
+                    <button class="filter-btn active" onclick="toggleLoja(this, 'pichau')">
+                        <img src="https://www.google.com/s2/favicons?domain=pichau.com.br&sz=128"> Pichau
+                    </button>
+                    <button class="filter-btn active" onclick="toggleLoja(this, 'terabyte')">
+                        <img src="https://www.google.com/s2/favicons?domain=terabyteshop.com.br&sz=128"> Terabyte
+                    </button>
+                </div>
+
+                <div class="sort-box">
+                    <select id="sortOrder" onchange="filtrarLocalmente()">
+                        <option value="menor_preco">💰 Menor Preço</option>
+                        <option value="maior_preco">💎 Maior Preço</option>
+                        <option value="maior_desconto">🔥 Maior Desconto</option>
+                        <option value="nome">🔤 Nome (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="loading" class="loading">⏳ Buscando ofertas e analisando produtos...</div>
+            <div id="results"></div>
+        </main>
+    </div>
+
+    <script>
+        const LOGOS = {
+            'Amazon': 'https://www.google.com/s2/favicons?domain=amazon.com.br&sz=128', 
+            'Mercado Livre': 'https://www.google.com/s2/favicons?domain=mercadolivre.com.br&sz=128',
+            'Kabum': 'https://www.google.com/s2/favicons?domain=kabum.com.br&sz=128', 
+            'Magalu': 'https://www.google.com/s2/favicons?domain=magazineluiza.com.br&sz=128',
+            'Pichau': 'https://www.google.com/s2/favicons?domain=pichau.com.br&sz=128', 
+            'Terabyte': 'https://www.google.com/s2/favicons?domain=terabyteshop.com.br&sz=128'
+        };
+        const LOGO_PADRAO = 'https://cdn-icons-png.flaticon.com/512/263/263142.png';
+
+        const MARCAS_COMUNS = ['Samsung', 'Apple', 'LG', 'Dell', 'Acer', 'Asus', 'Lenovo', 'HP', 'Kingston', 'Sandisk', 'Corsair', 'HyperX', 'Logitech', 'Razer', 'Redragon', 'JBL', 'Sony', 'Microsoft', 'Nintendo', 'PlayStation', 'Xbox', 'Intel', 'AMD', 'Nvidia', 'Gigabyte', 'MSI', 'Adata', 'Western Digital', 'Seagate', 'Motorola', 'Xiaomi', 'Philco', 'Mondial', 'Arno'];
+
+        let lojasAtivas = ['amazon', 'ml', 'kabum', 'magalu', 'pichau', 'terabyte'];
+        let PRODUTOS_CACHE = []; 
+        
+        let filtrosArmazenamento = new Set();
+        let filtrosMarcas = new Set();
+
+        function toggleLoja(btn, loja) {
+            btn.classList.toggle('active');
+            if (lojasAtivas.includes(loja)) lojasAtivas = lojasAtivas.filter(l => l !== loja);
+            else lojasAtivas.push(loja);
+        }
+
+        async function buscarNoPython() {
+            const termo = document.getElementById('searchInput').value;
+            const container = document.getElementById('results');
+            const loading = document.getElementById('loading');
+            const sidebar = document.getElementById('sidebarFiltros');
+            
+            if (!termo) return alert("Digite algo!");
+            if (lojasAtivas.length === 0) return alert("Selecione pelo menos uma loja!");
+
+            container.innerHTML = ''; 
+            loading.style.display = 'block';
+            sidebar.style.display = 'none'; 
+            
+            try {
+        
+                const response = await fetch(`/api/buscar?q=${termo}&lojas=${lojasAtivas.join(',')}`);
+                const dados = await response.json();
+                
+                loading.style.display = 'none';
+
+                if (!dados || dados.length === 0) {
+                    container.innerHTML = '<p style="text-align: center; width:100%;">Nada encontrado.</p>';
+                    return;
+                }
+
+                PRODUTOS_CACHE = dados;
+                
+                gerarFiltrosDinamicamente(PRODUTOS_CACHE);
+                sidebar.style.display = 'block';
+                filtrarLocalmente(); 
+
+            } catch (error) {
+                console.error(error); loading.style.display = 'none';
+                container.innerHTML = '<p style="text-align:center; color:red;">Erro ao conectar com o servidor Python.</p>';
+            }
+        }
+
+        function gerarFiltrosDinamicamente(lista) {
+            const containerStorage = document.getElementById('filter-storage-list');
+            const containerBrand = document.getElementById('filter-brand-list');
+            
+            const storageOptions = new Set();
+            const brandOptions = new Set();
+
+            lista.forEach(p => {
+                const nomeUpper = p.nome.toUpperCase();
+                const matchStorage = nomeUpper.match(/\b(\d+)\s?(GB|TB)\b/);
+                if (matchStorage) {
+                    storageOptions.add(matchStorage[0].replace(' ', '')); 
+                }
+
+                MARCAS_COMUNS.forEach(marca => {
+                    if (nomeUpper.includes(marca.toUpperCase())) {
+                        brandOptions.add(marca);
+                    }
+                });
+            });
+
+            containerStorage.innerHTML = '';
+            if (storageOptions.size > 0) {
+                const sortedStorage = Array.from(storageOptions).sort((a, b) => {
+                    const valA = a.includes('TB') ? parseInt(a)*1000 : parseInt(a);
+                    const valB = b.includes('TB') ? parseInt(b)*1000 : parseInt(b);
+                    return valA - valB;
+                });
+
+                sortedStorage.forEach(opt => {
+                    containerStorage.innerHTML += `
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="${opt}" onchange="toggleFiltroArmazenamento('${opt}')"> ${opt}
+                        </label>`;
+                });
+            } else {
+                containerStorage.innerHTML = '<p style="font-size:0.8rem; color:#888">Nenhum detectado.</p>';
+            }
+
+            containerBrand.innerHTML = '';
+            if (brandOptions.size > 0) {
+                Array.from(brandOptions).sort().forEach(marca => {
+                    containerBrand.innerHTML += `
+                        <label class="checkbox-label">
+                            <input type="checkbox" value="${marca}" onchange="toggleFiltroMarca('${marca}')"> ${marca}
+                        </label>`;
+                });
+            } else {
+                containerBrand.innerHTML = '<p style="font-size:0.8rem; color:#888">Nenhuma detectada.</p>';
+            }
+
+            filtrosArmazenamento.clear();
+            filtrosMarcas.clear();
+            document.getElementById('minPrice').value = '';
+            document.getElementById('maxPrice').value = '';
+        }
+
+        function toggleFiltroArmazenamento(val) {
+            if (filtrosArmazenamento.has(val)) filtrosArmazenamento.delete(val);
+            else filtrosArmazenamento.add(val);
+            filtrarLocalmente();
+        }
+
+        function toggleFiltroMarca(val) {
+            if (filtrosMarcas.has(val)) filtrosMarcas.delete(val);
+            else filtrosMarcas.add(val);
+            filtrarLocalmente();
+        }
+
+        function filtrarLocalmente() {
+            const minP = parseFloat(document.getElementById('minPrice').value) || 0;
+            const maxP = parseFloat(document.getElementById('maxPrice').value) || 9999999;
+            
+            let listaFiltrada = PRODUTOS_CACHE.filter(p => {
+                if (p.preco < minP || p.preco > maxP) return false;
+
+                if (filtrosArmazenamento.size > 0) {
+                    const nomeUpper = p.nome.toUpperCase();
+                    let achou = false;
+                    for (let storage of filtrosArmazenamento) {
+                        if (nomeUpper.includes(storage.toUpperCase())) achou = true;
+                    }
+                    if (!achou) return false;
+                }
+
+                if (filtrosMarcas.size > 0) {
+                    const nomeUpper = p.nome.toUpperCase();
+                    let achou = false;
+                    for (let marca of filtrosMarcas) {
+                        if (nomeUpper.includes(marca.toUpperCase())) achou = true;
+                    }
+                    if (!achou) return false;
+                }
+
+                return true;
+            });
+
+            const criterio = document.getElementById('sortOrder').value;
+            if (criterio === 'menor_preco') listaFiltrada.sort((a, b) => a.preco - b.preco);
+            else if (criterio === 'maior_preco') listaFiltrada.sort((a, b) => b.preco - a.preco);
+            else if (criterio === 'nome') listaFiltrada.sort((a, b) => a.nome.localeCompare(b.nome));
+            else if (criterio === 'maior_desconto') {
+                listaFiltrada.sort((a, b) => {
+                    const descA = (a.preco_antigo > a.preco) ? (1 - a.preco/a.preco_antigo) : 0;
+                    const descB = (b.preco_antigo > b.preco) ? (1 - b.preco/b.preco_antigo) : 0;
+                    return descB - descA;
+                });
+            }
+
+            renderizarNaTela(listaFiltrada);
+        }
+
+        function renderizarNaTela(lista) {
+            const container = document.getElementById('results');
+            container.innerHTML = '';
+
+            if (lista.length === 0) {
+                container.innerHTML = '<p style="width:100%; text-align:center; padding:20px;">Nenhum produto com esses filtros.</p>';
+                return;
+            }
+
+            lista.forEach(produto => {
+                const logoUrl = LOGOS[produto.loja] || LOGO_PADRAO;
+                const classeLoja = produto.loja ? produto.loja.replace(/\s+/g, '').toLowerCase() : 'outros'; 
+                const precoFormatado = produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                
+                let htmlPromo = '';
+                let htmlPrecoAntigo = '';
+                if (produto.preco_antigo && produto.preco_antigo > produto.preco) {
+                    const desconto = Math.round(((produto.preco_antigo - produto.preco) / produto.preco_antigo) * 100);
+                    const antigoFormatado = produto.preco_antigo.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                    if (desconto > 0) {
+                        htmlPromo = `<div class="promo-badge">🔥 ${desconto}% OFF</div>`;
+                        htmlPrecoAntigo = `<span class="old-price">${antigoFormatado}</span>`;
+                    }
+                }
+
+                const html = `
+                    <div class="card ${classeLoja}">
+                        ${htmlPromo}
+                        <div class="store-badge">
+                            <img src="${logoUrl}" class="store-logo-img" alt="${produto.loja}">
+                        </div>
+                        <div class="img-container">
+                            <img src="${produto.img}" class="product-img" alt="${produto.nome}" onerror="this.src='${LOGO_PADRAO}'">
+                        </div>
+                        <div class="product-title" title="${produto.nome}">${produto.nome}</div>
+                        <div class="price-area">
+                            ${htmlPrecoAntigo}
+                            <div class="price-tag">
+                                ${precoFormatado}
+                            </div>
+                        </div>
+                        <a href="${produto.link}" target="_blank" class="btn-buy">Ver na Loja ↗</a>
+                    </div>
+                `;
+                container.innerHTML += html;
+            });
+        }
+
+        document.getElementById("searchInput").addEventListener("keypress", (e) => { if(e.key==="Enter") buscarNoPython() });
+    </script>
+</body>
+</html>
